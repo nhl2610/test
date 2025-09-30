@@ -35,7 +35,7 @@ jobs:
           if [ "$SLOT" = "none" ]; then
             echo "Outside strict windows -> skip"
             echo "ok=false" >> $GITHUB_OUTPUT
-            exit 78
+            exit 0
           fi
 
           WINDOW_KEY="${SLOT}-${TODAY}"
