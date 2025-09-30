@@ -1,0 +1,69 @@
+name: Test Workflow
+#Giả sử cần chạy trong khoản 16h10 đến 16h39 - 15h35
+on:
+  # Poll quanh khung (UTC = VN-7)
+  schedule:
+    - cron: "00-59/5 8-9 * * 1-5" 
+  workflow_dispatch:
+  
+jobs:
+  run_if_in_window:
+    runs-on: ubuntu-latest  
+    steps:
+      - name: Print time (UTC & VN)
+        run: |
+          echo "UTC: $(date -u)"
+          echo "VN : $(TZ='Asia/Ho_Chi_Minh' date)"
+
+      # Xác định slot theo giờ VN; nếu ngoài slot thì skip
+      - name: Detect VN slot & build window key
+        id: slot
+        run: |
+          NOW="$(TZ='Asia/Ho_Chi_Minh' date +%H:%M)"
+          TODAY="$(TZ='Asia/Ho_Chi_Minh' date +%Y%m%d)"
+          echo "VN now: $NOW"
+
+          SLOT="none"
+          case "$NOW" in
+            14:1[0-9]|15:2[0-9]|15:3[0-9]) SLOT="slot2" ;;
+          esac
+
+          if [ "$SLOT" = "none" ]; then
+            echo "Outside strict windows -> skip"
+            echo "ok=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          WINDOW_KEY="${SLOT}-${TODAY}"
+          echo "WINDOW_KEY=$WINDOW_KEY" >> $GITHUB_ENV
+          echo "ok=true" >> $GITHUB_OUTPUT
+          echo "This run window key: $WINDOW_KEY"
+      - name: Prepare lock dir (must exist for cache to save)
+        if: steps.slot.outputs.ok == 'true'
+        run: |
+          LOCK_DIR="${{ runner.temp }}/window-lock"
+          mkdir -p "$LOCK_DIR"
+          echo "${{ env.WINDOW_KEY }}" > "$LOCK_DIR/lock.txt"
+          ls -la "$LOCK_DIR"
+          
+      # Lock theo (slot + ngày): run đầu tiên tạo key; run sau cùng slot/ngày sẽ cache-hit -> skip
+      - name: Window lock (first run wins)
+        if: steps.slot.outputs.ok == 'true'
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/window-lock
+          key: run-window-${{ env.WINDOW_KEY }}
+
+      - name: Skip if already executed in this window today
+        if: steps.slot.outputs.ok == 'true' && steps.cache.outputs.cache-hit == 'true'
+        run: |
+          echo "🔒 Already executed for ${{ env.WINDOW_KEY }} -> skip"
+          exit 78
+
+      # ------ THỰC THI THẬT SỰ (chỉ 1 lần/khung/ngày) ------
+      - name: Do the real thing
+        if: steps.slot.outputs.ok == 'true' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          echo "🚀 Executing ONCE for ${{ env.WINDOW_KEY }}"
+
