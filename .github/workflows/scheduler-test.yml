@@ -1,5 +1,5 @@
 name: Test Strict Windows
-#Giả sử cần chạy trong khoảng 14h00 đến 14h19 và 15h00 đến 15h19
+#Giả sử cần chạy trong khoảng 14h00 đến 14h19 và 15h00 đến 15h19 - 13h21
 on:
   # Poll quanh khung (UTC = VN-7)
   schedule:
