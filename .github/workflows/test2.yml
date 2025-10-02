@@ -59,7 +59,7 @@ jobs:
         if: steps.slot.outputs.ok == 'true' && steps.cache.outputs.cache-hit == 'true'
         run: |
           echo "🔒 Already executed for ${{ env.WINDOW_KEY }} -> skip"
-          exit 78
+          exit 0
 
       # ------ THỰC THI THẬT SỰ (chỉ 1 lần/khung/ngày) ------
       - name: Do the real thing
