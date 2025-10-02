@@ -3,8 +3,8 @@ name: Test Strict Windows
 on:
   # Poll quanh khung (UTC = VN-7)
   schedule:
-    - cron: "20-59/5 7 * * 1-5" 
-    - cron: "0-09/5 8 * * 1-5"   
+    # - cron: "20-59/5 7 * * 1-5" 
+    # - cron: "0-09/5 8 * * 1-5"   
   workflow_dispatch:
   
 jobs:
